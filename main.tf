@@ -65,7 +65,10 @@ resource "azurerm_kubernetes_cluster" "this" {
   cost_analysis_enabled             = var.cost_analysis_enabled
   tags                              = var.tags
   workload_identity_enabled         = true
-  api_server_authorized_ip_ranges   = var.api_server_authorized_ip_ranges
+
+  api_server_access_profile {
+    authorized_ip_ranges   = var.api_server_authorized_ip_ranges
+  }
 
   default_node_pool {
     name                   = "agentpool"
