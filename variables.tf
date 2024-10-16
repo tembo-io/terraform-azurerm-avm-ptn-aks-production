@@ -67,16 +67,21 @@ variable "resource_group_name" {
   nullable    = false
 }
 
-variable "acr" {
-  type = object({
-    name                          = string
-    private_dns_zone_resource_ids = set(string)
-    subnet_resource_id            = string
-
-  })
-  default     = null
-  description = "(Optional) Parameters for the Azure Container Registry to use with the Kubernetes Cluster."
-}
+# variable "create_acr" {
+#   type        = bool
+#   description = "Whether to create an Azure Container Registry"
+# }
+#
+# variable "acr" {
+#   type = object({
+#     name                          = string
+#     private_dns_zone_resource_ids = set(string)
+#     subnet_resource_id            = string
+#
+#   })
+#   default     = null
+#   description = "(Optional) Parameters for the Azure Container Registry to use with the Kubernetes Cluster."
+# }
 
 variable "agents_tags" {
   type        = map(string)

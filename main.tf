@@ -1,28 +1,28 @@
-module "avm_res_containerregistry_registry" {
-  for_each                      = toset(var.acr == null ? [] : ["acr"])
-  source                        = "Azure/avm-res-containerregistry-registry/azurerm"
-  version                       = "0.3.1"
-  name                          = var.acr.name
-  location                      = var.location
-  resource_group_name           = var.resource_group_name
-  sku                           = "Premium"
-  public_network_access_enabled = false
-  private_endpoints = {
-    primary = {
-      private_dns_zone_resource_ids = var.acr.private_dns_zone_resource_ids
-      subnet_resource_id            = var.acr.subnet_resource_id
-    }
-  }
-}
-
-resource "azurerm_role_assignment" "acr" {
-  for_each = toset(var.acr == null ? [] : ["acr"])
-
-  principal_id                     = azurerm_kubernetes_cluster.this.kubelet_identity[0].object_id
-  scope                            = module.avm_res_containerregistry_registry["acr"].resource_id
-  role_definition_name             = "AcrPull"
-  skip_service_principal_aad_check = true
-}
+# module "avm_res_containerregistry_registry" {
+#   for_each                      = var.create_acr ? toset(["acr"]) : toset([])
+#   source                        = "Azure/avm-res-containerregistry-registry/azurerm"
+#   version                       = "0.3.1"
+#   name                          = var.acr.name
+#   location                      = var.location
+#   resource_group_name           = var.resource_group_name
+#   sku                           = "Premium"
+#   public_network_access_enabled = false
+#   private_endpoints = {
+#     primary = {
+#       private_dns_zone_resource_ids = var.acr.private_dns_zone_resource_ids
+#       subnet_resource_id            = var.acr.subnet_resource_id
+#     }
+#   }
+# }
+#
+# resource "azurerm_role_assignment" "acr" {
+#   for_each = var.create_acr ? toset(["acr"]) : toset([])
+#
+#   principal_id                     = azurerm_kubernetes_cluster.this.kubelet_identity[0].object_id
+#   scope                            = module.avm_res_containerregistry_registry[0].resource_id
+#   role_definition_name             = "AcrPull"
+#   skip_service_principal_aad_check = true
+# }
 
 resource "azurerm_user_assigned_identity" "aks" {
   count = length(var.managed_identities.user_assigned_resource_ids) > 0 ? 0 : 1
@@ -67,7 +67,7 @@ resource "azurerm_kubernetes_cluster" "this" {
   workload_identity_enabled         = true
 
   api_server_access_profile {
-    authorized_ip_ranges   = var.api_server_authorized_ip_ranges
+    authorized_ip_ranges = var.api_server_authorized_ip_ranges
   }
 
   default_node_pool {
