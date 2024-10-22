@@ -71,19 +71,22 @@ resource "azurerm_kubernetes_cluster" "this" {
   }
 
   default_node_pool {
-    name                   = "agentpool"
-    vm_size                = var.default_node_pool_vm_size
-    enable_auto_scaling    = true
-    enable_host_encryption = true
-    max_count              = 9
-    max_pods               = 110
-    min_count              = 3
-    node_labels            = var.node_labels
-    orchestrator_version   = var.orchestrator_version
-    os_sku                 = var.os_sku
-    tags                   = merge(var.tags, var.agents_tags)
-    vnet_subnet_id         = var.network.node_subnet_id
-    zones                  = try([for zone in local.regions_by_name_or_display_name[var.location].zones : zone], null)
+    name    = "agentpool"
+    vm_size = var.default_node_pool_vm_size
+    # temporary_name_for_rotation is needed for any change to the default node pool, adding it here as it should be required and not optional
+    # see: https://github.com/hashicorp/terraform-provider-azurerm/issues/23084
+    temporary_name_for_rotation = "tempnodepool"
+    enable_auto_scaling         = true
+    enable_host_encryption      = true
+    max_count                   = 9
+    max_pods                    = 110
+    min_count                   = 3
+    node_labels                 = var.node_labels
+    orchestrator_version        = var.orchestrator_version
+    os_sku                      = var.os_sku
+    tags                        = merge(var.tags, var.agents_tags)
+    vnet_subnet_id              = var.network.node_subnet_id
+    zones                       = try([for zone in local.regions_by_name_or_display_name[var.location].zones : zone], null)
 
     upgrade_settings {
       max_surge = "10%"
