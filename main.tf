@@ -52,12 +52,12 @@ resource "azurerm_kubernetes_cluster" "this" {
   location                          = var.location
   name                              = "aks-${var.name}"
   resource_group_name               = var.resource_group_name
-  automatic_channel_upgrade         = var.automatic_channel_upgrade
+  automatic_upgrade_channel         = var.automatic_channel_upgrade
   azure_policy_enabled              = true
   dns_prefix                        = var.name
   kubernetes_version                = var.kubernetes_version
   local_account_disabled            = true
-  node_os_channel_upgrade           = "NodeImage"
+  node_os_upgrade_channel           = "NodeImage"
   oidc_issuer_enabled               = true
   private_cluster_enabled           = var.private_cluster_enabled
   role_based_access_control_enabled = true
@@ -76,8 +76,8 @@ resource "azurerm_kubernetes_cluster" "this" {
     # temporary_name_for_rotation is needed for any change to the default node pool, adding it here as it should be required and not optional
     # see: https://github.com/hashicorp/terraform-provider-azurerm/issues/23084
     temporary_name_for_rotation = "tempnodepool"
-    enable_auto_scaling         = true
-    enable_host_encryption      = true
+    auto_scaling_enabled        = true
+    host_encryption_enabled     = true
     max_count                   = 9
     max_pods                    = 110
     min_count                   = 3
@@ -98,7 +98,6 @@ resource "azurerm_kubernetes_cluster" "this" {
   azure_active_directory_role_based_access_control {
     admin_group_object_ids = var.rbac_aad_admin_group_object_ids
     azure_rbac_enabled     = var.rbac_aad_azure_rbac_enabled
-    managed                = true
     tenant_id              = var.rbac_aad_tenant_id
   }
   ## Resources that only support UserAssigned
@@ -161,11 +160,11 @@ resource "null_resource" "kubernetes_version_keeper" {
 
 resource "azapi_update_resource" "aks_cluster_post_create" {
   type = "Microsoft.ContainerService/managedClusters@2024-02-01"
-  body = jsonencode({
+  body = {
     properties = {
       kubernetesVersion = var.kubernetes_version
     }
-  })
+  }
   resource_id = azurerm_kubernetes_cluster.this.id
 
   lifecycle {
@@ -188,6 +187,9 @@ resource "azurerm_log_analytics_workspace_table" "this" {
   name         = each.value
   workspace_id = azurerm_log_analytics_workspace.this.id
   plan         = "Basic"
+  # Basic plan has a fixed retention of 8 days, this cannot be changed.
+  # retention_in_days = 8
+  total_retention_in_days = 30
 }
 
 resource "azurerm_monitor_diagnostic_setting" "aks" {
@@ -261,19 +263,20 @@ resource "azurerm_kubernetes_cluster_node_pool" "this" {
     for pool in local.node_pools : pool.name => pool
   })
 
-  kubernetes_cluster_id = azurerm_kubernetes_cluster.this.id
-  name                  = each.value.name
-  vm_size               = each.value.vm_size
-  enable_auto_scaling   = true
-  max_count             = each.value.max_count
-  min_count             = each.value.min_count
-  node_labels           = each.value.labels
-  orchestrator_version  = each.value.orchestrator_version
-  os_disk_size_gb       = each.value.os_disk_size_gb
-  os_sku                = each.value.os_sku
-  tags                  = var.tags
-  vnet_subnet_id        = var.network.node_subnet_id
-  zones                 = each.value.zone == "" ? null : [each.value.zone]
+  kubernetes_cluster_id   = azurerm_kubernetes_cluster.this.id
+  name                    = each.value.name
+  vm_size                 = each.value.vm_size
+  auto_scaling_enabled    = true
+  host_encryption_enabled = true
+  max_count               = each.value.max_count
+  min_count               = each.value.min_count
+  node_labels             = each.value.labels
+  orchestrator_version    = each.value.orchestrator_version
+  os_disk_size_gb         = each.value.os_disk_size_gb
+  os_sku                  = each.value.os_sku
+  tags                    = var.tags
+  vnet_subnet_id          = var.network.node_subnet_id
+  zones                   = each.value.zone == "" ? null : [each.value.zone]
 
   depends_on = [azapi_update_resource.aks_cluster_post_create]
 
