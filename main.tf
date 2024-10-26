@@ -270,7 +270,9 @@ resource "azurerm_kubernetes_cluster_node_pool" "this" {
   host_encryption_enabled = true
   max_count               = each.value.max_count
   min_count               = each.value.min_count
-  node_labels             = each.value.labels
+  mode                    = each.value.mode
+  node_labels             = each.value.node_labels
+  node_taints             = each.value.node_taints
   orchestrator_version    = each.value.orchestrator_version
   os_disk_size_gb         = each.value.os_disk_size_gb
   os_sku                  = each.value.os_sku

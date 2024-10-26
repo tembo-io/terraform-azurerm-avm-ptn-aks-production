@@ -207,7 +207,9 @@ variable "node_pools" {
     mode            = optional(string)
     os_disk_size_gb = optional(number, null)
     tags            = optional(map(string), {})
-    labels          = optional(map(string), {})
+    node_labels     = optional(map(string), {})
+    node_taints     = optional(list(string), [])
+    zones           = optional(list(string), [])
   }))
   default     = {}
   description = <<-EOT
@@ -222,7 +224,9 @@ map(object({
   mode                 = (Optional) Should this Node Pool be used for System or User resources? Possible values are `System` and `User`. Defaults to `User`.
   os_disk_size_gb      = (Optional) The Agent Operating System disk size in GB. Changing this forces a new resource to be created.
   tags                 = (Optional) A mapping of tags to assign to the resource. At this time there's a bug in the AKS API where Tags for a Node Pool are not stored in the correct case - you [may wish to use Terraform's `ignore_changes` functionality to ignore changes to the casing](https://www.terraform.io/language/meta-arguments/lifecycle#ignore_changess) until this is fixed in the AKS API.
-  labels               = (Optional) A map of Kubernetes labels which should be applied to nodes in this Node Pool.
+  node_labels          = (Optional) A map of Kubernetes labels which should be applied to nodes in this Node Pool.
+  node_tails           = (Optional) A list of Kubernetes taints which should be applied to nodes in this Node Pool.
+  zones                = (Optional) A list of Availability Zones in which the Node Pool's nodes should be created. Changing this forces a new resource to be created.
 }))
 
 Example input:

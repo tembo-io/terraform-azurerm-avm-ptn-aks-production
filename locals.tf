@@ -31,14 +31,15 @@ locals {
   # Flatten a list of var.node_pools and zones
   node_pools = flatten([
     for pool in var.node_pools : [
-      for zone in try(local.regions_by_name_or_display_name[var.location].zones, [""]) : {
+      for zone in(length(pool.zones) > 0 ? pool.zones : try(local.regions_by_name_or_display_name[var.location].zones, [""])) : {
         # concatenate name and zone trim to 12 characters
         name                 = "${substr(pool.name, 0, 10)}${zone}"
         vm_size              = pool.vm_size
         orchestrator_version = pool.orchestrator_version
         max_count            = pool.max_count
         min_count            = pool.min_count
-        labels               = pool.labels
+        node_labels          = pool.node_labels
+        node_taints          = pool.node_taints
         os_sku               = pool.os_sku
         mode                 = pool.mode
         os_disk_size_gb      = pool.os_disk_size_gb
