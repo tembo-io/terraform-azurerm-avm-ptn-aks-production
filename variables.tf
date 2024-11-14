@@ -20,12 +20,14 @@ variable "network" {
     name                = string
     network_data_plane  = optional(string, "azure")
     network_plugin      = optional(string, "azure")
-    network_plugin_mode = optional(string, "overlay")
+    network_plugin_mode = optional(string, null)
     network_policy      = optional(string, "azure")
     node_subnet_id      = string
     pod_cidr            = optional(string)
+    pod_cidrs           = optional(list(string))
     resource_group_name = string
     service_cidr        = optional(string)
+    outbound_type       = optional(string)
   })
   description = "Values for the networking configuration of the AKS cluster"
 
@@ -58,12 +60,23 @@ variable "network" {
     condition     = var.network.network_plugin != "azure" || (var.network.pod_cidr == null) || (var.network.network_plugin_mode == "overlay" && var.network.pod_cidr != null)
     error_message = "When network_plugin is 'azure', pod_cidr must be null unless network_plugin_mode is set to 'overlay'."
   }
+
+  validation {
+    condition     = contains(["loadBalancer", "userDefinedRouting", "managedNATGateway", "userAssignedNATGateway"], var.network.outbound_type)
+    error_message = "The outbound_type value must be one of: loadBalancer, userDefinedRouting, managedNATGateway, or userAssignedNATGateway."
+  }
 }
 
 # This is required for most resource modules
 variable "resource_group_name" {
   type        = string
   description = "The resource group where the resources will be deployed."
+  nullable    = false
+}
+
+variable "node_resource_group" {
+  type        = string
+  description = "The resource group where the node pool resources will be deployed."
   nullable    = false
 }
 
@@ -225,7 +238,7 @@ map(object({
   os_disk_size_gb      = (Optional) The Agent Operating System disk size in GB. Changing this forces a new resource to be created.
   tags                 = (Optional) A mapping of tags to assign to the resource. At this time there's a bug in the AKS API where Tags for a Node Pool are not stored in the correct case - you [may wish to use Terraform's `ignore_changes` functionality to ignore changes to the casing](https://www.terraform.io/language/meta-arguments/lifecycle#ignore_changess) until this is fixed in the AKS API.
   node_labels          = (Optional) A map of Kubernetes labels which should be applied to nodes in this Node Pool.
-  node_tails           = (Optional) A list of Kubernetes taints which should be applied to nodes in this Node Pool.
+  node_taints          = (Optional) A list of Kubernetes taints which should be applied to nodes in this Node Pool.
   zones                = (Optional) A list of Availability Zones in which the Node Pool's nodes should be created. Changing this forces a new resource to be created.
 }))
 
@@ -311,6 +324,24 @@ variable "sku_tier" {
     condition     = contains(["Free", "Standard", "Premium"], var.sku_tier)
     error_message = "The sku_tier must be one of: Free, Standard, or Premium."
   }
+}
+
+variable "local_account_disabled" {
+  type        = bool
+  default     = false
+  description = "Should the local account be disabled for the Kubernetes Cluster?"
+}
+
+variable "image_cleaner_enabled" {
+  type        = bool
+  default     = true
+  description = "Specifies whether Image Cleaner is enabled."
+}
+
+variable "image_cleaner_interval_hours" {
+  type        = number
+  default     = 168
+  description = "Specifies the interval in hours when images should be cleaned up. Defaults to `0`"
 }
 
 # tflint-ignore: terraform_unused_declarations

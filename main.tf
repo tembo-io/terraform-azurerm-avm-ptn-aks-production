@@ -52,11 +52,14 @@ resource "azurerm_kubernetes_cluster" "this" {
   location                          = var.location
   name                              = "aks-${var.name}"
   resource_group_name               = var.resource_group_name
+  node_resource_group               = var.node_resource_group
   automatic_upgrade_channel         = var.automatic_channel_upgrade
   azure_policy_enabled              = true
   dns_prefix                        = var.name
+  image_cleaner_enabled             = var.image_cleaner_enabled
+  image_cleaner_interval_hours      = var.image_cleaner_interval_hours
   kubernetes_version                = var.kubernetes_version
-  local_account_disabled            = true
+  local_account_disabled            = var.local_account_disabled
   node_os_upgrade_channel           = "NodeImage"
   oidc_issuer_enabled               = true
   private_cluster_enabled           = var.private_cluster_enabled
@@ -118,12 +121,15 @@ resource "azurerm_kubernetes_cluster" "this" {
   }
   network_profile {
     network_plugin      = var.network.network_plugin
+    network_data_plane  = var.network.network_data_plane
     load_balancer_sku   = "standard"
     network_plugin_mode = var.network.network_plugin == "azure" ? var.network.network_plugin_mode : null
     network_policy      = var.network.network_policy
     pod_cidr            = var.network.network_plugin == "kubenet" || (var.network.network_plugin == "azure" && var.network.network_plugin_mode == "overlay") ? var.network.pod_cidr : null
+    pod_cidrs           = var.network.network_plugin == "kubenet" || (var.network.network_plugin == "azure" && var.network.network_plugin_mode == "overlay") ? var.network.pod_cidrs : null
     service_cidr        = var.network.service_cidr
     dns_service_ip      = var.network.dns_service_ip
+    outbound_type       = var.network.outbound_type
   }
   oms_agent {
     log_analytics_workspace_id      = azurerm_log_analytics_workspace.this.id
@@ -259,9 +265,7 @@ resource "azurerm_management_lock" "this" {
 
 
 resource "azurerm_kubernetes_cluster_node_pool" "this" {
-  for_each = tomap({
-    for pool in local.node_pools : pool.name => pool
-  })
+  for_each = var.node_pools
 
   kubernetes_cluster_id   = azurerm_kubernetes_cluster.this.id
   name                    = each.value.name
@@ -278,7 +282,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "this" {
   os_sku                  = each.value.os_sku
   tags                    = var.tags
   vnet_subnet_id          = var.network.node_subnet_id
-  zones                   = each.value.zone == "" ? null : [each.value.zone]
+  zones                   = length(each.value.zones) > 0 ? each.value.zones : null
 
   depends_on = [azapi_update_resource.aks_cluster_post_create]
 
