@@ -82,11 +82,12 @@ resource "azurerm_kubernetes_cluster" "this" {
     auto_scaling_enabled        = true
     host_encryption_enabled     = true
     max_count                   = 9
-    max_pods                    = 110
+    max_pods                    = var.max_pods
     min_count                   = 3
     node_labels                 = var.node_labels
     orchestrator_version        = var.orchestrator_version
     os_sku                      = var.os_sku
+    pod_subnet_id               = var.pod_subnet_id
     tags                        = merge(var.tags, var.agents_tags)
     vnet_subnet_id              = var.network.node_subnet_id
     zones                       = try([for zone in local.regions_by_name_or_display_name[var.location].zones : zone], null)
@@ -126,7 +127,7 @@ resource "azurerm_kubernetes_cluster" "this" {
     network_plugin_mode = var.network.network_plugin == "azure" ? var.network.network_plugin_mode : null
     network_policy      = var.network.network_policy
     pod_cidr            = var.network.network_plugin == "kubenet" || (var.network.network_plugin == "azure" && var.network.network_plugin_mode == "overlay") ? var.network.pod_cidr : null
-    pod_cidrs           = var.network.network_plugin == "kubenet" || (var.network.network_plugin == "azure" && var.network.network_plugin_mode == "overlay") ? var.network.pod_cidrs : null
+    pod_cidrs           = var.network.pod_cidrs
     service_cidr        = var.network.service_cidr
     dns_service_ip      = var.network.dns_service_ip
     outbound_type       = var.network.outbound_type
@@ -273,6 +274,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "this" {
   auto_scaling_enabled    = true
   host_encryption_enabled = true
   max_count               = each.value.max_count
+  max_pods                = var.max_pods
   min_count               = each.value.min_count
   mode                    = each.value.mode
   node_labels             = each.value.node_labels
@@ -280,6 +282,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "this" {
   orchestrator_version    = each.value.orchestrator_version
   os_disk_size_gb         = each.value.os_disk_size_gb
   os_sku                  = each.value.os_sku
+  pod_subnet_id           = var.pod_subnet_id
   tags                    = var.tags
   vnet_subnet_id          = var.network.node_subnet_id
   zones                   = length(each.value.zones) > 0 ? each.value.zones : null

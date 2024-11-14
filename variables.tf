@@ -350,3 +350,15 @@ variable "tags" {
   default     = null
   description = "(Optional) Tags of the resource."
 }
+
+variable "max_pods" {
+  type        = number
+  default     = 110
+  description = "The maximum number of pods that can run on a node."
+}
+
+variable "pod_subnet_id" {
+  type        = string
+  default     = null
+  description = "The ID of the Subnet where the Kubernetes Pods should be placed."
+}
