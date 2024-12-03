@@ -295,6 +295,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "this" {
   os_disk_size_gb         = each.value.os_disk_size_gb
   os_sku                  = each.value.os_sku
   pod_subnet_id           = var.pod_subnet_id
+  priority                = each.value.priority
   tags                    = var.tags
   vnet_subnet_id          = var.network.node_subnet_id
   zones                   = length(each.value.zones) > 0 ? each.value.zones : null

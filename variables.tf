@@ -218,10 +218,11 @@ variable "node_pools" {
     min_count       = optional(number)
     os_sku          = optional(string, "AzureLinux")
     mode            = optional(string)
-    os_disk_size_gb = optional(number, null)
-    tags            = optional(map(string), {})
     node_labels     = optional(map(string), {})
     node_taints     = optional(list(string), [])
+    os_disk_size_gb = optional(number, null)
+    priority        = optional(string, "Regular")
+    tags            = optional(map(string), {})
     zones           = optional(list(string), [])
   }))
   default     = {}
@@ -235,10 +236,11 @@ map(object({
   min_count            = (Optional) The minimum number of nodes which should exist within this Node Pool. Valid values are between `0` and `1000` and must be less than or equal to `max_count`.
   os_sku               = (Optional) Specifies the OS SKU used by the agent pool. Possible values include: `Ubuntu`or `AzureLinux`. If not specified, the default is `AzureLinux`. Changing this forces a new resource to be created.
   mode                 = (Optional) Should this Node Pool be used for System or User resources? Possible values are `System` and `User`. Defaults to `User`.
-  os_disk_size_gb      = (Optional) The Agent Operating System disk size in GB. Changing this forces a new resource to be created.
-  tags                 = (Optional) A mapping of tags to assign to the resource. At this time there's a bug in the AKS API where Tags for a Node Pool are not stored in the correct case - you [may wish to use Terraform's `ignore_changes` functionality to ignore changes to the casing](https://www.terraform.io/language/meta-arguments/lifecycle#ignore_changess) until this is fixed in the AKS API.
   node_labels          = (Optional) A map of Kubernetes labels which should be applied to nodes in this Node Pool.
   node_taints          = (Optional) A list of Kubernetes taints which should be applied to nodes in this Node Pool.
+  os_disk_size_gb      = (Optional) The Agent Operating System disk size in GB. Changing this forces a new resource to be created.
+  priority             = (Optional) The priority of the Node Pool. Possible values are `Regular` and `Spot`. Defaults to `Regular`.
+  tags                 = (Optional) A mapping of tags to assign to the resource. At this time there's a bug in the AKS API where Tags for a Node Pool are not stored in the correct case - you [may wish to use Terraform's `ignore_changes` functionality to ignore changes to the casing](https://www.terraform.io/language/meta-arguments/lifecycle#ignore_changess) until this is fixed in the AKS API.
   zones                = (Optional) A list of Availability Zones in which the Node Pool's nodes should be created. Changing this forces a new resource to be created.
 }))
 
