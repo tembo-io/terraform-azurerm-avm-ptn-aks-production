@@ -224,6 +224,7 @@ variable "node_pools" {
     priority        = optional(string, "Regular")
     tags            = optional(map(string), {})
     zones           = optional(list(string), [])
+    eviction_policy = optional(string, null)
   }))
   default     = {}
   description = <<-EOT
@@ -242,6 +243,7 @@ map(object({
   priority             = (Optional) The priority of the Node Pool. Possible values are `Regular` and `Spot`. Defaults to `Regular`.
   tags                 = (Optional) A mapping of tags to assign to the resource. At this time there's a bug in the AKS API where Tags for a Node Pool are not stored in the correct case - you [may wish to use Terraform's `ignore_changes` functionality to ignore changes to the casing](https://www.terraform.io/language/meta-arguments/lifecycle#ignore_changess) until this is fixed in the AKS API.
   zones                = (Optional) A list of Availability Zones in which the Node Pool's nodes should be created. Changing this forces a new resource to be created.
+  eviction_policy      = (Optional) The Eviction Policy which should be used for Virtual Machines within the Virtual Machine Scale Set powering this Node Pool. Possible values are `Deallocate` and `Delete`. Only applicable when priority is set to `Spot`. Changing this forces a new resource to be created.
 }))
 
 Example input:
@@ -273,6 +275,23 @@ EOT
   validation {
     condition     = alltrue([for pool in var.node_pools : contains(["Ubuntu", "AzureLinux"], pool.os_sku)])
     error_message = "os_sku must be either Ubuntu or AzureLinux"
+  }
+  validation {
+    condition     = alltrue([for pool in var.node_pools : contains(["Regular", "Spot"], pool.priority)])
+    error_message = "priority must be either Regular or Spot"
+  }
+
+  validation {
+    condition = alltrue([
+      for pool in var.node_pools : (
+        pool.priority == "Spot" ? (
+          pool.eviction_policy != null && contains(["Deallocate", "Delete"], pool.eviction_policy)
+          ) : (
+          pool.eviction_policy == null
+        )
+      )
+    ])
+    error_message = "eviction_policy must be either 'Deallocate' or 'Delete' when priority is 'Spot', and must be null when priority is 'Regular'"
   }
 }
 

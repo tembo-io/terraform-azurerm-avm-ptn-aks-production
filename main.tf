@@ -280,15 +280,15 @@ resource "azurerm_management_lock" "this" {
 resource "azurerm_kubernetes_cluster_node_pool" "this" {
   for_each = var.node_pools
 
-  kubernetes_cluster_id   = azurerm_kubernetes_cluster.this.id
-  name                    = each.value.name
-  vm_size                 = each.value.vm_size
   auto_scaling_enabled    = true
+  eviction_policy         = each.value.eviction_policy
   host_encryption_enabled = true
+  kubernetes_cluster_id   = azurerm_kubernetes_cluster.this.id
   max_count               = each.value.max_count
   max_pods                = var.max_pods
   min_count               = each.value.min_count
   mode                    = each.value.mode
+  name                    = each.value.name
   node_labels             = each.value.node_labels
   node_taints             = each.value.node_taints
   orchestrator_version    = each.value.orchestrator_version
@@ -297,6 +297,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "this" {
   pod_subnet_id           = var.pod_subnet_id
   priority                = each.value.priority
   tags                    = var.tags
+  vm_size                 = each.value.vm_size
   vnet_subnet_id          = var.network.node_subnet_id
   zones                   = length(each.value.zones) > 0 ? each.value.zones : null
 
